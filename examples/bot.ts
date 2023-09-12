@@ -85,6 +85,21 @@ const enviarMenu = async (message, usuarioInfo) => {
     awaitingResponse = true;
 };
 
+if (comandoprinc.startsWith('💳R$')) {
+  let itemselecionado = '';
+
+  // Concatenar todos os elementos do array parametros com espaço
+  for (const parametro of parametros) {
+    itemselecionado += parametro + ' '; // Adicionar um espaço em branco após cada elemento
+  }
+
+  const comprakk = `Compra Acionada!\nItem Escolhido: ${itemselecionado}`;
+  await botBaileys.sendText(message.from, comprakk);
+}
+
+
+
+
 if (comandoprinc === 'pix') {
   const valorkk = valorcomand;
   if (valorkk === undefined) {
