@@ -34,6 +34,7 @@
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@whiskeysockets/baileys": "^6.4.0",
     "axios": "^1.5.0",
+    "cheerio": "^1.0.0-rc.12",
     "fluent-ffmpeg": "^2.1.2",
     "https": "^1.0.0",
     "puppeteer": "^21.1.1",

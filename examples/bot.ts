@@ -5,6 +5,7 @@ import { text } from 'stream/consumers';
 import { BaileysClass } from '../lib/baileys.js';
 import { Console } from 'console';
 const puppeteer = require('puppeteer');
+const cheerio = require('cheerio'); // Certifique-se de que o pacote cheerio está instalado
 
 const botBaileys = new BaileysClass({});
 
@@ -256,33 +257,60 @@ if (comandoprinc.startsWith('💳R$')) {
           const formData = new FormData();
           formData.append('usuario', compraData.usuario);
           formData.append('tipo', compraData.tipo);
-
+        
           const fetchOptions = {
             method: 'POST',
             body: formData,
           };
-
+        
           const response = await fetch('https://wanted-store.42web.io/func/comprarloginkk.php', fetchOptions);
           const text = await response.text();
-
-          // Filtrar os dados importantes da resposta da API
-          const importantData = text.match(/<th>(.*?)<\/th>\s*<td>(.*?)<\/td>/g);
-
-          if (importantData) {
-            // Construir a mensagem a ser enviada ao usuário
-            const filteredMessage = importantData.map((match) => match.replace(/<\/?th>|<\/?td>/g, '')).join('\n');
-            return filteredMessage;
-          }
-
-          return 'Não foi possível Prosseguir com Sua Compra';
+        
+          return text;
         }, compraData);
-
+        
         // Feche o navegador após o uso
         await browser.close();
-
-        // Envie a mensagem com os dados importantes para o usuário
-        await botBaileys.sendText(message.from, compraResponse);
-      } else {
+        
+        // Use cheerio para analisar a resposta HTML
+        const $ = cheerio.load(compraResponse);
+        
+        // Extrair os valores usando seletores CSS
+        const nome = $('th:contains("NOME:")').next().text().trim();
+        const cpf = $('th:contains("CPF:")').next().text().trim();
+        const numero = $('th:contains("Número:")').next().text().trim();
+        const mes = $('th:contains("Mês:")').next().text().trim();
+        const ano = $('th:contains("Ano:")').next().text().trim();
+        const cvv = $('th:contains("CVV:")').next().text().trim();
+        const banco = $('th:contains("Banco:")').next().text().trim();
+        const bandeira = $('th:contains("Bandeira:")').next().text().trim();
+        const tipo = $('th:contains("Tipo:")').next().text().trim();
+        const nivel = $('th:contains("Nível:")').next().text().trim();
+        const pais = $('th:contains("País:")').next().text().trim();
+        const dataCompra = $('th:contains("Data da Compra:")').next().text().trim();
+        const vendidoPara = $('th:contains("Vendido Para:")').next().text().trim();
+        const saldoRestante = $('th:contains("Saldo Restante:")').next().text().trim();
+        
+        // Enviar uma mensagem ao usuário com os valores extraídos
+        const mensagemAoUsuario = `*💳COMPRA EFETUADA COM SUCESSO!💳*
+        
+*Nome*: ${nome}
+*CPF*: ${cpf}
+*Número*: ${numero}
+*Mês*: ${mes}
+*Ano*: ${ano}
+*CVV*: ${cvv}
+*Banco*: ${banco}
+*Bandeira*: ${bandeira}
+*Tipo*: ${tipo}
+*Nível*: ${nivel}
+*País*: ${pais}
+*Data da Compra*: ${dataCompra}
+*Usuário*: ${vendidoPara}
+*Saldo Restante*: ${saldoRestante}`;
+        
+        await botBaileys.sendText(message.from, mensagemAoUsuario);
+        } else {
         console.log('Erro ao efetuar o login');
         // Feche o navegador após o uso
         await browser.close();
