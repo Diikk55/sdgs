@@ -265,6 +265,8 @@ if (comandoprinc.startsWith('💳R$')) {
         await browser.close();
 
         // Envie a mensagem com a resposta da segunda requisição POST
+        const oquefoienviado = email_do_usuario + ' ' + itemselecionado; 
+        await botBaileys.sendText(message.from, oquefoienviado);
         await botBaileys.sendText(message.from, compraResponse);
       } else {
         console.log('Erro ao efetuar o login');
