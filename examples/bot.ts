@@ -180,18 +180,24 @@ if (comandoprinc.startsWith('💳R$')) {
       let itemselecionado = '';
 
       // Concatenar todos os elementos do array parametros com espaço
-      for (const parametro of parametros) {
-        itemselecionado += parametro + ' '; // Adicionar um espaço em branco após cada elemento
+      for (let i = 0; i < parametros.length; i++) {
+        itemselecionado += parametros[i];
+        if (i < parametros.length - 1) {
+          itemselecionado += ' '; // Adicionar um espaço em branco após cada elemento, exceto o último
+        }
       }
-
+      
       // Remover o final indesejado "| Quantidade: 4"
       itemselecionado = itemselecionado.replace(/\| Quantidade: \d+/g, '');
-
+      
       // Remover emojis, incluindo o '💳' do início
       itemselecionado = itemselecionado.replace(/[\u{1F600}-\u{1F6FF}💳]/gu, '');
-
+      
       // Converter para minúsculas
       itemselecionado = itemselecionado.toLowerCase();
+      
+      // Remover espaços em branco no final do texto
+      itemselecionado = itemselecionado.trim();
       const usuario = message.from;
       const logado = usuario.split('@s.whatsapp.net')[0];
       const { usuarioEncontrado, usuarioInfo } = await verificarUsuario(logado);
@@ -492,12 +498,12 @@ if (message.body === 'menu') {
                 });
               
                 // Filtrar a opção "💳ESCOLHA UM CARTÃO AQUI💳" antes de enviar a enquete
-                const filteredOptions = pollOptions.filter((option) => option !== '💳ESCOLHA UM CARTÃO AQUI💳');
+                //const filteredOptions = pollOptions.filter((option) => option !== '💳ESCOLHA UM CARTÃO AQUI💳');
               
-                if (filteredOptions.length > 0) {
+                if (pollOptions.length > 0) {
                   // Enviar enquete para o usuário com as opções filtradas
                   await botBaileys.sendPoll(message.from, '*💳Escolha uma BIN Abaixo💳*', {
-                    options: filteredOptions,
+                    options: pollOptions,
                     multiselect: false
                   });
                 } else {
@@ -578,12 +584,12 @@ if (message.body === 'menu') {
                 });
               
                 // Filtrar a opção "💳ESCOLHA UM CARTÃO AQUI💳" antes de enviar a enquete
-                const filteredOptions = pollOptions.filter((option) => option !== '💳ESCOLHA UM CARTÃO AQUI💳');
+                //const filteredOptions = pollOptions.filter((option) => option !== '💳ESCOLHA UM CARTÃO AQUI💳');
               
-                if (filteredOptions.length > 0) {
+                if (pollOptions.length > 0) {
                   // Enviar enquete para o usuário com as opções filtradas
                   await botBaileys.sendPoll(message.from, '*💳Escolha um Cartão Por Banco Abaixo💳*', {
-                    options: filteredOptions,
+                    options: pollOptions,
                     multiselect: false
                   });
                 } else {
@@ -601,91 +607,92 @@ if (message.body === 'menu') {
           awaitingResponse = true;
         }
     if (message.body === '💳CARTÕES POR NÍVEL') {
-        (async () => {
-          const usuario = message.from;
-          const logado = usuario.split('@s.whatsapp.net')[0];
-          const { usuarioEncontrado, usuarioInfo } = await verificarUsuario(logado);
-          const email_do_usuario = usuarioInfo.numero;
-          const senha_do_usuario = usuarioInfo.senha;
-          if (usuarioEncontrado) {
-            console.log("Dados de Usuário Capturados!")
-          } else {
-            // Se o usuário não existe, envia mensagem de erro
-            await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
-          }
-          const browser = await puppeteer.launch();
-          const page = await browser.newPage();
-        
-          // Configurar os dados do POST
-          const postData = {
-            email: email_do_usuario,
-            senha: senha_do_usuario
+      (async () => {
+        const usuario = message.from;
+        const logado = usuario.split('@s.whatsapp.net')[0];
+        const { usuarioEncontrado, usuarioInfo } = await verificarUsuario(logado);
+        const email_do_usuario = usuarioInfo.numero;
+        const senha_do_usuario = usuarioInfo.senha;
+        if (usuarioEncontrado) {
+          console.log("Dados de Usuário Capturados!")
+        } else {
+          // Se o usuário não existe, envia mensagem de erro
+          await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
+        }
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+      
+        // Configurar os dados do POST
+        const postData = {
+          email: email_do_usuario,
+          senha: senha_do_usuario
+        };
+      
+        // Fazer a solicitação POST
+        await page.goto('https://wanted-store.42web.io/func/logarbotapi.php', {
+          waitUntil: 'networkidle0',
+        });
+      
+        const response = await page.evaluate(async (postData) => {
+          const formData = new FormData();
+          formData.append('email', postData.email);
+          formData.append('senha', postData.senha);
+      
+          const fetchOptions = {
+            method: 'POST',
+            body: formData,
           };
-        
-          // Fazer a solicitação POST
-          await page.goto('https://wanted-store.42web.io/func/logarbotapi.php', {
-            waitUntil: 'networkidle0',
-          });
-        
-          const response = await page.evaluate(async (postData) => {
-            const formData = new FormData();
-            formData.append('email', postData.email);
-            formData.append('senha', postData.senha);
-        
-            const fetchOptions = {
-              method: 'POST',
-              body: formData,
-            };
-        
-            const response = await fetch('https://wanted-store.42web.io/func/logarbotapi.php', fetchOptions);
-            const text = await response.text();
-        
-            return text;
-          }, postData);
       
-          if (response.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
-            console.log('Login bem-sucedido');
-            // Redirecionar para https://wanted-store.42web.io/loja/listalogins.php
-            //await botBaileys.sendText(message.from, response);
+          const response = await fetch('https://wanted-store.42web.io/func/logarbotapi.php', fetchOptions);
+          const text = await response.text();
       
-            // Crie um novo PageContext na mesma instância do navegador
-            const page2 = await browser.newPage();
-            await page2.goto('https://wanted-store.42web.io/loja/listalogins.php');
-            const response2 = await page2.content();
-      
-            // Extrair elementos do tipo <option> da resposta da segunda página
-            const options = response2.match(/<option[^>]*>.*?<\/option>/g);
-            
-            if (options && options.length > 0) {
-              const pollOptions = options.map((option) => {
-                // Extrair o texto dentro da tag <option>
-                const text = option.replace(/<[^>]*>/g, '');
-                return text;
+          return text;
+        }, postData);
+    
+        if (response.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
+          console.log('Login bem-sucedido');
+          // Redirecionar para https://wanted-store.42web.io/loja/listalogins.php
+          //await botBaileys.sendText(message.from, response);
+    
+          // Crie um novo PageContext na mesma instância do navegador
+          const page2 = await browser.newPage();
+          await page2.goto('https://wanted-store.42web.io/loja/listalogins.php');
+          const response2 = await page2.content();
+    
+          // Extrair elementos do tipo <option> da resposta da segunda página
+          const options = response2.match(/<option[^>]*>.*?<\/option>/g);
+          
+          if (options && options.length > 0) {
+            const pollOptions = options.map((option) => {
+              // Extrair o texto dentro da tag <option>
+              const text = option.replace(/<[^>]*>/g, '');
+              return text;
+            });
+          
+            // Filtrar a opção "💳ESCOLHA UM CARTÃO AQUI💳" antes de enviar a enquete
+            //const filteredOptions = pollOptions.filter((option) => option !== '💳ESCOLHA UM CARTÃO AQUI💳');
+          
+            if (pollOptions.length > 0) {
+              //console.log(filteredOptions)
+              // Enviar enquete para o usuário com as opções filtradas
+              await botBaileys.sendPoll(message.from, '*💳Escolha um Cartão Por Nível Abaixo💳*', {
+                options: pollOptions,
+                multiselect: false
               });
-            
-              // Filtrar a opção "💳ESCOLHA UM CARTÃO AQUI💳" antes de enviar a enquete
-              const filteredOptions = pollOptions.filter((option) => option !== '💳ESCOLHA UM CARTÃO AQUI💳');
-            
-              if (filteredOptions.length > 0) {
-                // Enviar enquete para o usuário com as opções filtradas
-                await botBaileys.sendPoll(message.from, '*💳Escolha um Cartão Por Nível Abaixo💳*', {
-                  options: filteredOptions,
-                  multiselect: false
-                });
-              } else {
-                await botBaileys.sendText(message.from, '*⚠️Nenhum Cartão Da Categoria Selecionada Disponível no Estoque!⚠️*\n\nTente Novamente Mais Tarde <3');
-              }
             } else {
               await botBaileys.sendText(message.from, '*⚠️Nenhum Cartão Da Categoria Selecionada Disponível no Estoque!⚠️*\n\nTente Novamente Mais Tarde <3');
             }
           } else {
-            await botBaileys.sendText(message.from, 'Erro ao fazer login');
-            // Aqui você pode enviar uma mensagem de erro
+            await botBaileys.sendText(message.from, '*⚠️Nenhum Cartão Da Categoria Selecionada Disponível no Estoque!⚠️*\n\nTente Novamente Mais Tarde <3');
           }
-          await browser.close();
-        })();
-        awaitingResponse = true;
-      } else {
+        } else {
+          await botBaileys.sendText(message.from, 'Erro ao fazer login');
+          // Aqui você pode enviar uma mensagem de erro
+        }
+        await browser.close();
+      })();
+      awaitingResponse = true;
+    } else {
         const command = message.body.toLowerCase().trim();
         //console.log(command)
         switch (command) {
