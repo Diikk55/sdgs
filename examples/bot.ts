@@ -32,6 +32,7 @@ botBaileys.on('message', async (message) => {
     const logcomando = 'Comando: ' + parametros;
     const comandoprinc = parametros[0];
     const valorcomand = parametros[1];
+    const comandokkj = message.body.toLowerCase().trim();
     console.log(comandoprinc)
     console.log(valorcomand)
     console.log('Novo Comando!\n')
@@ -264,15 +265,22 @@ if (comandoprinc.startsWith('💳R$')) {
           const response = await fetch('https://wanted-store.42web.io/func/comprarloginkk.php', fetchOptions);
           const text = await response.text();
 
-          return text;
+          // Filtrar os dados importantes da resposta da API
+          const importantData = text.match(/<th>(.*?)<\/th>\s*<td>(.*?)<\/td>/g);
+
+          if (importantData) {
+            // Construir a mensagem a ser enviada ao usuário
+            const filteredMessage = importantData.map((match) => match.replace(/<\/?th>|<\/?td>/g, '')).join('\n');
+            return filteredMessage;
+          }
+
+          return 'Não foi possível Prosseguir com Sua Compra';
         }, compraData);
 
         // Feche o navegador após o uso
         await browser.close();
 
-        // Envie a mensagem com a resposta da segunda requisição POST
-        const oquefoienviado = email_do_usuario + ' ' + itemselecionado; 
-        await botBaileys.sendText(message.from, oquefoienviado);
+        // Envie a mensagem com os dados importantes para o usuário
         await botBaileys.sendText(message.from, compraResponse);
       } else {
         console.log('Erro ao efetuar o login');
@@ -388,7 +396,7 @@ if (comandoprinc === 'pix') {
   }
 }
 // Verifique se a mensagem é 'menu' e envie o menu se o usuário existir no banco de dados
-if (message.body === 'menu') {
+if (comandokkj === 'menu') {
     console.log("Menu Acionado!")
     const usuario = message.from;
     const logado = usuario.split('@s.whatsapp.net')[0];
