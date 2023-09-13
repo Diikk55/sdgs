@@ -85,21 +85,197 @@ const enviarMenu = async (message, usuarioInfo) => {
     awaitingResponse = true;
 };
 
-if (comandoprinc.startsWith('💳R$')) {
-  let itemselecionado = '';
+if (message.body === '💳PACOTES MIX') {
+  (async () => {
+    const usuario = message.from;
+    const logado = usuario.split('@s.whatsapp.net')[0];
+    const { usuarioEncontrado, usuarioInfo } = await verificarUsuario(logado);
+    const email_do_usuario = usuarioInfo.numero;
+    const senha_do_usuario = usuarioInfo.senha;
+    if (usuarioEncontrado) {
+      console.log("Dados de Usuário Capturados!")
+    } else {
+      // Se o usuário não existe, envia mensagem de erro
+      await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
+    }
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+  
+    // Configurar os dados do POST
+    const postData = {
+      email: email_do_usuario,
+      senha: senha_do_usuario
+    };
+  
+    // Fazer a solicitação POST
+    await page.goto('https://wanted-store.42web.io/func/logarbotapi.php', {
+      waitUntil: 'networkidle0',
+    });
+  
+    const response = await page.evaluate(async (postData) => {
+      const formData = new FormData();
+      formData.append('email', postData.email);
+      formData.append('senha', postData.senha);
+  
+      const fetchOptions = {
+        method: 'POST',
+        body: formData,
+      };
+  
+      const response = await fetch('https://wanted-store.42web.io/func/logarbotapi.php', fetchOptions);
+      const text = await response.text();
+  
+      return text;
+    }, postData);
 
-  // Concatenar todos os elementos do array parametros com espaço
-  for (const parametro of parametros) {
-    itemselecionado += parametro + ' '; // Adicionar um espaço em branco após cada elemento
-  }
+    if (response.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
+      console.log('Login bem-sucedido');
+      // Redirecionar para https://wanted-store.42web.io/loja/listalogins.php
+      //await botBaileys.sendText(message.from, response);
 
-  const comprakk = `Compra Acionada!\nItem Escolhido: ${itemselecionado}`;
-  await botBaileys.sendText(message.from, comprakk);
+      // Crie um novo PageContext na mesma instância do navegador
+      const page2 = await browser.newPage();
+      await page2.goto('https://wanted-store.42web.io/loja/listaiptv.php');
+      const response2 = await page2.content();
+
+      // Extrair elementos do tipo <option> da resposta da segunda página
+      const options = response2.match(/<option[^>]*>.*?<\/option>/g);
+      
+      if (options && options.length > 0) {
+        const pollOptions = options.map((option) => {
+          // Extrair o texto dentro da tag <option>
+          const text = option.replace(/<[^>]*>/g, '');
+          return text;
+        });
+      
+        // Filtrar a opção "💳ESCOLHA UM CARTÃO AQUI💳" antes de enviar a enquete
+        const filteredOptions = pollOptions.filter((option) => option !== '✅ESCOLHA UMA CATEGORIA AQUI!✅');
+      
+        if (filteredOptions.length > 0) {
+          // Enviar enquete para o usuário com as opções filtradas
+          await botBaileys.sendPoll(message.from, '*💳Escolha um Pacote Mix Abaixo💳*', {
+            options: filteredOptions,
+            multiselect: false
+          });
+        } else {
+          await botBaileys.sendText(message.from, '*⚠️Nenhum Cartão Da Categoria Selecionada Disponível no Estoque!⚠️*\n\nTente Novamente Mais Tarde <3');
+        }
+      } else {
+        await botBaileys.sendText(message.from, '*⚠️Nenhum Cartão Da Categoria Selecionada Disponível no Estoque!⚠️*\n\nTente Novamente Mais Tarde <3');
+      }
+    } else {
+      await botBaileys.sendText(message.from, 'Erro ao fazer login');
+      // Aqui você pode enviar uma mensagem de erro
+    }
+    await browser.close();
+  })();
+  awaitingResponse = true;
 }
 
 
+if (comandoprinc.startsWith('💳R$')) {
+  (async () => {
+    try {
+      const nomeDaEnquete = message.voters.pollCreationMessage.name;
+      let itemselecionado = '';
 
+      // Concatenar todos os elementos do array parametros com espaço
+      for (const parametro of parametros) {
+        itemselecionado += parametro + ' '; // Adicionar um espaço em branco após cada elemento
+      }
 
+      // Remover o final indesejado "| Quantidade: 4"
+      itemselecionado = itemselecionado.replace(/\| Quantidade: \d+/g, '');
+
+      // Remover emojis, incluindo o '💳' do início
+      itemselecionado = itemselecionado.replace(/[\u{1F600}-\u{1F6FF}💳]/gu, '');
+
+      // Converter para minúsculas
+      itemselecionado = itemselecionado.toLowerCase();
+      const usuario = message.from;
+      const logado = usuario.split('@s.whatsapp.net')[0];
+      const { usuarioEncontrado, usuarioInfo } = await verificarUsuario(logado);
+      const email_do_usuario = usuarioInfo.numero;
+      const senha_do_usuario = usuarioInfo.senha;
+
+      if (usuarioEncontrado) {
+        console.log("Dados de Usuário Capturados!");
+      } else {
+        // Se o usuário não existe, envia mensagem de erro
+        await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
+        return; // Saia da função se o usuário não estiver cadastrado
+      }
+
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+
+      // Configurar os dados do POST
+      const postData = {
+        email: email_do_usuario,
+        senha: senha_do_usuario
+      };
+
+      // Fazer a solicitação POST para o login
+      await page.goto('https://wanted-store.42web.io/func/logarbotapi.php', {
+        waitUntil: 'networkidle0',
+      });
+
+      const loginResponse = await page.evaluate(async (postData) => {
+        const formData = new FormData();
+        formData.append('email', postData.email);
+        formData.append('senha', postData.senha);
+
+        const fetchOptions = {
+          method: 'POST',
+          body: formData,
+        };
+
+        const response = await fetch('https://wanted-store.42web.io/func/logarbotapi.php', fetchOptions);
+        const text = await response.text();
+
+        return text;
+      }, postData);
+
+      if (loginResponse.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
+        console.log('Login bem-sucedido');
+
+        // Agora, faça a requisição POST para https://wanted-store.42web.io/func/comprarloginkk.php
+        const compraData = {
+          usuario: email_do_usuario,
+          tipo: itemselecionado
+        };
+
+        const compraResponse = await page.evaluate(async (compraData) => {
+          const formData = new FormData();
+          formData.append('usuario', compraData.usuario);
+          formData.append('tipo', compraData.tipo);
+
+          const fetchOptions = {
+            method: 'POST',
+            body: formData,
+          };
+
+          const response = await fetch('https://wanted-store.42web.io/func/comprarloginkk.php', fetchOptions);
+          const text = await response.text();
+
+          return text;
+        }, compraData);
+
+        // Feche o navegador após o uso
+        await browser.close();
+
+        // Envie a mensagem com a resposta da segunda requisição POST
+        await botBaileys.sendText(message.from, compraResponse);
+      } else {
+        console.log('Erro ao efetuar o login');
+        // Feche o navegador após o uso
+        await browser.close();
+      }
+    } catch (error) {
+      console.error('Ocorreu um erro:', error);
+    }
+  })();
+}
 if (comandoprinc === 'pix') {
   const valorkk = valorcomand;
   if (valorkk === undefined) {
