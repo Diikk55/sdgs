@@ -80,7 +80,7 @@ const enviarMenu = async (message, usuarioInfo) => {
     const menuText = `Wanted Store\n\n◆ ━━━━❪✪❫━━━━ ◆\n❖ Seu número: ${(message.from.split('@'))[0]}\n❖ Saldo Atual: R$: ${saldoAtual}\n◆ ━━━━❪✪❫━━━━ ◆\n\nATENDIMENTO ON 24 HRS⏰\nGARANTIMOS LIVE E MELHOR PREÇO✅\nTODAS AS INFO SÃO TESTADAS✅\n\n🤖WANTED STORE A MELHOR STORE DA ATUALIDADE🤖\nQUALIDADE,PREÇO JUSTO E AGILIDADE`;
 
     await botBaileys.sendPoll(message.from, menuText, {
-        options: ['🤑ADICIONAR SALDO🤑', '💳COMPRAR INFO💳', '📞FALAR COM O SUPORTE📞', '👨SOBRE O BOT👨'],
+        options: ['🤑ADICIONAR SALDO🤑', '💳COMPRAR INFO💳', '🔧SUPORTE DESTE BOT🔧', '⚙️DESENVOLVEDOR DO BOT⚙️'],
         multiselect: false
     });
 
@@ -153,7 +153,7 @@ if (message.body === '💳PACOTES MIX') {
         // Filtrar a opção "💳ESCOLHA UM CARTÃO AQUI💳" antes de enviar a enquete
         const filteredOptions = pollOptions.filter((option) => option !== '✅ESCOLHA UMA CATEGORIA AQUI!✅');
       
-        if (filteredOptions.length > 0) {
+        if (filteredOptions.length > 2) {
           // Enviar enquete para o usuário com as opções filtradas
           await botBaileys.sendPoll(message.from, '*💳Escolha um Pacote Mix Abaixo💳*', {
             options: filteredOptions,
@@ -179,6 +179,7 @@ if (comandoprinc.startsWith('💳R$')) {
   (async () => {
     try {
       const nomeDaEnquete = message.voters.pollCreationMessage.name;
+      console.log(nomeDaEnquete)
       let itemselecionado = '';
 
       // Concatenar todos os elementos do array parametros com espaço
@@ -247,57 +248,81 @@ if (comandoprinc.startsWith('💳R$')) {
       if (loginResponse.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
         console.log('Login bem-sucedido');
 
-        // Agora, faça a requisição POST para https://wanted-store.42web.io/func/comprarloginkk.php
-        const compraData = {
-          usuario: email_do_usuario,
-          tipo: itemselecionado
-        };
-
-        const compraResponse = await page.evaluate(async (compraData) => {
-          const formData = new FormData();
-          formData.append('usuario', compraData.usuario);
-          formData.append('tipo', compraData.tipo);
+        let compraUrl = ''; // Variável para armazenar a URL da compra
         
-          const fetchOptions = {
-            method: 'POST',
-            body: formData,
-          };
-        
-          const response = await fetch('https://wanted-store.42web.io/func/comprarloginkk.php', fetchOptions);
-          const text = await response.text();
-        
-          return text;
-        }, compraData);
-        
-        // Feche o navegador após o uso
-        await browser.close();
-        
-        // Use cheerio para analisar a resposta HTML
-        const $ = cheerio.load(compraResponse);
-        if (compraResponse.includes('Saldo insuficiente para realizar a compra.')) {
-          await botBaileys.sendText(message.from, '*⚠️Seu Saldo é Insuficiente Para Realizar a Comprar⚠️*');
-          return
+        // Definir a URL da compra com base no valor de nomeDaEnquete
+        if (nomeDaEnquete === '*💳Escolha um Cartão Por Nível Abaixo💳*') {
+          compraUrl = 'https://wanted-store.42web.io/func/comprarloginkk.php';
+          console.log(nomeDaEnquete)
+          console.log(compraUrl)
+        } else if (nomeDaEnquete === '*💳Escolha um Cartão Por Banco Abaixo💳*') {
+          compraUrl = 'https://wanted-store.42web.io/func/comprarloginbancokk.php';
+          console.log(nomeDaEnquete)
+          console.log(compraUrl)
+        } else if (nomeDaEnquete === '*💳Escolha uma BIN Abaixo💳*') {
+          compraUrl = 'https://wanted-store.42web.io/func/comprarloginbinkk.php';
+          console.log(nomeDaEnquete)
+          console.log(compraUrl)
         }
-        
-        // Extrair os valores usando seletores CSS
-        const nome = $('th:contains("NOME:")').next().text().trim();
-        const cpf = $('th:contains("CPF:")').next().text().trim();
-        const numero = $('th:contains("Número:")').next().text().trim();
-        const mes = $('th:contains("Mês:")').next().text().trim();
-        const ano = $('th:contains("Ano:")').next().text().trim();
-        const cvv = $('th:contains("CVV:")').next().text().trim();
-        const banco = $('th:contains("Banco:")').next().text().trim();
-        const bandeira = $('th:contains("Bandeira:")').next().text().trim();
-        const tipo = $('th:contains("Tipo:")').next().text().trim();
-        const nivel = $('th:contains("Nível:")').next().text().trim();
-        const pais = $('th:contains("País:")').next().text().trim();
-        const dataCompra = $('th:contains("Data da Compra:")').next().text().trim();
-        const vendidoPara = $('th:contains("Vendido Para:")').next().text().trim();
-        const saldoRestante = $('th:contains("Saldo Restante:")').next().text().trim();
-        
-        // Enviar uma mensagem ao usuário com os valores extraídos
-        const mensagemAoUsuario = `*💳COMPRA EFETUADA COM SUCESSO!💳*
-        
+
+        // Verificar se a URL de compra foi definida
+        if (compraUrl !== '') {
+          // Agora, faça a requisição POST para a URL da compra
+          const compraData = {
+            usuario: email_do_usuario,
+            tipo: itemselecionado
+          };
+
+          const compraResponse = await page.evaluate(async (compraUrl, compraData) => {
+            const formData = new FormData();
+            formData.append('usuario', compraData.usuario);
+            formData.append('tipo', compraData.tipo);
+          
+            const fetchOptions = {
+              method: 'POST',
+              body: formData,
+            };
+          
+            const response = await fetch(compraUrl, fetchOptions);
+            const text = await response.text();
+          
+            return text;
+          }, compraUrl, compraData);
+          
+          // Feche o navegador após o uso
+          await browser.close();
+          
+          // Use cheerio para analisar a resposta HTML
+          const $ = cheerio.load(compraResponse);
+          if (compraResponse.includes('Nenhuma Info Disponível No Momento...')) {
+            await botBaileys.sendText(message.from, '*⚠️Nenhuma Info Deste Tipo em Estoque!⚠️*');
+            return
+          }
+
+          if (compraResponse.includes('Saldo insuficiente para realizar a compra.')) {
+            await botBaileys.sendText(message.from, '*⚠️Seu Saldo é Insuficiente Para Realizar a Comprar⚠️*');
+            return
+          }
+          
+          // Extrair os valores usando seletores CSS
+          const nome = $('th:contains("NOME:")').next().text().trim();
+          const cpf = $('th:contains("CPF:")').next().text().trim();
+          const numero = $('th:contains("Número:")').next().text().trim();
+          const mes = $('th:contains("Mês:")').next().text().trim();
+          const ano = $('th:contains("Ano:")').next().text().trim();
+          const cvv = $('th:contains("CVV:")').next().text().trim();
+          const banco = $('th:contains("Banco:")').next().text().trim();
+          const bandeira = $('th:contains("Bandeira:")').next().text().trim();
+          const tipo = $('th:contains("Tipo:")').next().text().trim();
+          const nivel = $('th:contains("Nível:")').next().text().trim();
+          const pais = $('th:contains("País:")').next().text().trim();
+          const dataCompra = $('th:contains("Data da Compra:")').next().text().trim();
+          const vendidoPara = $('th:contains("Vendido Para:")').next().text().trim();
+          const saldoRestante = $('th:contains("Saldo Restante:")').next().text().trim();
+          
+          // Enviar uma mensagem ao usuário com os valores extraídos
+          const mensagemAoUsuario = `*💳COMPRA EFETUADA COM SUCESSO!💳*
+          
 *Nome*: ${nome}
 *CPF*: ${cpf}
 *Número*: ${numero}
@@ -312,9 +337,15 @@ if (comandoprinc.startsWith('💳R$')) {
 *Data da Compra*: ${dataCompra}
 *Usuário*: ${vendidoPara}
 *Saldo Restante*: ${saldoRestante}`;
-        
-        await botBaileys.sendText(message.from, mensagemAoUsuario);
+          
+          await botBaileys.sendMedia(message.from, 'https://i.ibb.co/X2xgBW7/compra.jpg' , '');
+          await botBaileys.sendText(message.from, mensagemAoUsuario);
         } else {
+          console.log('URL de compra não definida');
+          // Feche o navegador após o uso
+          await browser.close();
+        }
+      } else {
         console.log('Erro ao efetuar o login');
         // Feche o navegador após o uso
         await browser.close();
@@ -324,6 +355,7 @@ if (comandoprinc.startsWith('💳R$')) {
     }
   })();
 }
+
 if (comandoprinc === 'pix') {
   const valorkk = valorcomand;
   if (valorkk === undefined) {
@@ -540,7 +572,7 @@ if (comandokkj === 'menu') {
                 // Filtrar a opção "💳ESCOLHA UM CARTÃO AQUI💳" antes de enviar a enquete
                 //const filteredOptions = pollOptions.filter((option) => option !== '💳ESCOLHA UM CARTÃO AQUI💳');
               
-                if (pollOptions.length > 0) {
+                if (pollOptions.length > 2) {
                   // Enviar enquete para o usuário com as opções filtradas
                   await botBaileys.sendPoll(message.from, '*💳Escolha uma BIN Abaixo💳*', {
                     options: pollOptions,
@@ -626,7 +658,7 @@ if (comandokkj === 'menu') {
                 // Filtrar a opção "💳ESCOLHA UM CARTÃO AQUI💳" antes de enviar a enquete
                 //const filteredOptions = pollOptions.filter((option) => option !== '💳ESCOLHA UM CARTÃO AQUI💳');
               
-                if (pollOptions.length > 0) {
+                if (pollOptions.length > 2) {
                   // Enviar enquete para o usuário com as opções filtradas
                   await botBaileys.sendPoll(message.from, '*💳Escolha um Cartão Por Banco Abaixo💳*', {
                     options: pollOptions,
@@ -712,7 +744,7 @@ if (comandokkj === 'menu') {
             // Filtrar a opção "💳ESCOLHA UM CARTÃO AQUI💳" antes de enviar a enquete
             //const filteredOptions = pollOptions.filter((option) => option !== '💳ESCOLHA UM CARTÃO AQUI💳');
           
-            if (pollOptions.length > 0) {
+            if (pollOptions.length > 2) {
               //console.log(filteredOptions)
               // Enviar enquete para o usuário com as opções filtradas
               await botBaileys.sendPoll(message.from, '*💳Escolha um Cartão Por Nível Abaixo💳*', {
@@ -743,7 +775,7 @@ if (comandokkj === 'menu') {
                 await botBaileys.sendText(message.from, 'Agora Sim é Um Comando ?');
                 break;    
             case 'falar com o suporte':
-                await botBaileys.sendMedia(message.from, 'https://www.w3schools.com/w3css/img_lights.jpg', 'Deus Mesopotameo');
+                await botBaileys.sendMedia(message.from, 'https://github.com/Diikk55/sdgs/blob/main/imagens/compra.jpeg?raw=true', 'test');
                 break;
             case 'sobre o bot':
                 await botBaileys.sendFile(message.from, 'https://github.com/pedrazadixon/sample-files/raw/main/sample_pdf.pdf');
