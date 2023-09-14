@@ -173,7 +173,131 @@ if (message.body === '💳PACOTES MIX') {
   })();
   awaitingResponse = true;
 }
+if (comandoprinc.startsWith('R$')) {
+  (async () => {
+    try {
+      const nomeDaEnquete = message.voters.pollCreationMessage.name;
+      let itemselecionado = '';
 
+      // Concatenar todos os elementos do array parametros com espaço
+      for (let i = 0; i < parametros.length; i++) {
+        itemselecionado += parametros[i];
+        if (i < parametros.length - 1) {
+          itemselecionado += ' '; // Adicionar um espaço em branco após cada elemento, exceto o último
+        }
+      }
+
+      // Remover o final indesejado "| Quantidade: 4"
+      itemselecionado = itemselecionado.replace(/\| Quantidade: \d+/g, '');
+
+      // Remover emojis, incluindo o '💳' do início
+      itemselecionado = itemselecionado.replace(/[\u{1F600}-\u{1F6FF}💳]/gu, '');
+
+      // Remover espaços em branco no final do texto
+      itemselecionado = itemselecionado.trim();
+      const usuario = message.from;
+      const logado = usuario.split('@s.whatsapp.net')[0];
+      const { usuarioEncontrado, usuarioInfo } = await verificarUsuario(logado);
+      const email_do_usuario = usuarioInfo.numero;
+      const senha_do_usuario = usuarioInfo.senha;
+
+      if (usuarioEncontrado) {
+        console.log("Dados de Usuário Capturados!");
+      } else {
+        // Se o usuário não existe, envia mensagem de erro
+        await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
+        return; // Saia da função se o usuário não estiver cadastrado
+      }
+
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+
+      // Configurar os dados do POST
+      const postData = {
+        email: email_do_usuario,
+        senha: senha_do_usuario
+      };
+
+      // Fazer a solicitação POST para o login
+      await page.goto('https://wanted-store.42web.io/func/logarbotapi.php', {
+        waitUntil: 'networkidle0',
+      });
+
+      const loginResponse = await page.evaluate(async (postData) => {
+        const formData = new FormData();
+        formData.append('email', postData.email);
+        formData.append('senha', postData.senha);
+
+        const fetchOptions = {
+          method: 'POST',
+          body: formData,
+        };
+
+        const response = await fetch('https://wanted-store.42web.io/func/logarbotapi.php', fetchOptions);
+        const text = await response.text();
+
+        return text;
+      }, postData);
+
+      if (loginResponse.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
+        console.log('Login bem-sucedido');
+      
+        // Agora, faça a requisição POST para https://wanted-store.42web.io/func/comprarloginkk.php
+        const compraData = {
+          usuario: email_do_usuario,
+          tipo: itemselecionado
+        };
+      
+        const compraResponse = await page.evaluate(async (compraData) => {
+          const formData = new FormData();
+          formData.append('usuario', compraData.usuario);
+          formData.append('tipo', compraData.tipo);
+      
+          const fetchOptions = {
+            method: 'POST',
+            body: formData,
+          };
+      
+          const response = await fetch('https://wanted-store.42web.io/func/comprariptvkk.php', fetchOptions);
+          const text = await response.text();
+      
+          return text;
+        }, compraData);
+      
+        // Feche o navegador após o uso
+        await browser.close();
+      
+        // Use cheerio para analisar a resposta HTML
+        const $ = cheerio.load(compraResponse);
+      
+        // Extrair os valores usando seletores CSS
+        const compraEfetuada = $('form').text().trim();
+        const conteudo = compraEfetuada.split('Compra Efetuada com Sucesso!')[1].trim();
+      
+        const informacoes = conteudo.split('\n');
+        const tipo = informacoes[0];
+        const suporte = informacoes[1];
+        const preco = informacoes[2];
+        const dataCompra = informacoes[3];
+        const vendidoPara = informacoes[4];
+        const saldoRestante = informacoes[5];
+      
+        // Enviar uma mensagem ao usuário com os valores extraídos
+        const mensagemAoUsuario = `Compra Efetuada com Sucesso!\n\n${conteudo}\n\n${tipo}\n\n${suporte}\n\n${preco}\n\n${dataCompra}\n\n${vendidoPara}\n\n${saldoRestante}`;
+      
+        await botBaileys.sendMedia(message.from, 'https://i.ibb.co/X2xgBW7/compra.jpg', '');
+        await botBaileys.sendText(message.from, compraResponse);
+        await botBaileys.sendText(message.from, mensagemAoUsuario);
+      } else {
+        console.log('Erro ao efetuar o login');
+        // Feche o navegador após o uso
+        await browser.close();
+      }
+    } catch (error) {
+      console.error('Ocorreu um erro:', error);
+    }
+  })();
+}
 
 if (comandoprinc.startsWith('💳R$')) {
   (async () => {
