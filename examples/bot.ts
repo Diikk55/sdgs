@@ -283,21 +283,20 @@ if (comandoprinc.startsWith('R$')) {
         const saldoRestante = informacoes[5];
       
         // Enviar uma mensagem ao usuário com os valores extraídos
-        const mensagemAoUsuario = `Compra Efetuada com Sucesso!\n\n${conteudo}\n\n${tipo}\n\n${suporte}\n\n${preco}\n\n${dataCompra}\n\n${vendidoPara}\n\n${saldoRestante}`;
+        const mensagemAoUsuario = `Compra Efetuada com Sucesso!\n\nConteúdo:\n${conteudo}\n\n${tipo}\n${suporte}\n${preco}\n${dataCompra}\n\n${vendidoPara}\nSaldo Restante: ${saldoRestante}`;
       
         await botBaileys.sendMedia(message.from, 'https://i.ibb.co/X2xgBW7/compra.jpg', '');
-        await botBaileys.sendText(message.from, compraResponse);
         await botBaileys.sendText(message.from, mensagemAoUsuario);
       } else {
         console.log('Erro ao efetuar o login');
         // Feche o navegador após o uso
         await browser.close();
       }
-    } catch (error) {
+      } catch (error) {
       console.error('Ocorreu um erro:', error);
-    }
-  })();
-}
+      }
+      })();
+      }
 
 if (comandoprinc.startsWith('💳R$')) {
   (async () => {
