@@ -274,6 +274,10 @@ if (comandoprinc.startsWith('💳R$')) {
         
         // Use cheerio para analisar a resposta HTML
         const $ = cheerio.load(compraResponse);
+        if (compraResponse.includes('Saldo insuficiente para realizar a compra.')) {
+          await botBaileys.sendText(message.from, '*⚠️Seu Saldo é Insuficiente Para Realizar a Comprar⚠️*');
+          return
+        }
         
         // Extrair os valores usando seletores CSS
         const nome = $('th:contains("NOME:")').next().text().trim();
