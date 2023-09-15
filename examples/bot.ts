@@ -5,6 +5,7 @@ import { text } from 'stream/consumers';
 import { BaileysClass } from '../lib/baileys.js';
 import { Console } from 'console';
 const puppeteer = require('puppeteer');
+const path = require('path');
 const fs = require('fs');
 const cheerio = require('cheerio'); // Certifique-se de que o pacote cheerio está instalado
 var axios = require("axios").default;
@@ -105,8 +106,11 @@ if (comandokkj === 'antispam') {
     const formattedDatetime = new Date(apiDatetime).toISOString(); // Formata o horário
 
     // Abre o arquivo "spam.txt" e lê seu conteúdo
-    const filePath = './spam.txt';
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const filePath = path.join(__dirname, 'spam.txt');
+    let fileContent = '';
+    if (fs.existsSync(filePath)) {
+      fileContent = fs.readFileSync(filePath, 'utf-8');
+    }
 
     // Verifica se já existe uma linha com o remetente atual
     const lines = fileContent.split('\n');
@@ -114,6 +118,16 @@ if (comandokkj === 'antispam') {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       if (line.startsWith(remetente + '|')) {
+        const savedDatetime = line.split('|')[1];
+        const savedTimestamp = new Date(savedDatetime).getTime();
+        const currentTimestamp = new Date(apiDatetime).getTime();
+
+        if (currentTimestamp - savedTimestamp < 5000) {
+          // Menos de 5 segundos desde a última interação, responda com erro
+          await botBaileys.sendText(message.from, '❌ANTI-SPAM❌\n\nAguarde alguns segundos antes de enviar outro comando.');
+          return; // Sai da função para evitar processamento adicional
+        }
+
         lines[i] = remetente + '|' + formattedDatetime;
         found = true;
         break;
@@ -130,16 +144,12 @@ if (comandokkj === 'antispam') {
 
     // Salva as alterações de volta no arquivo
     fs.writeFileSync(filePath, updatedContent);
-
-    // Envie a resposta da API como mensagem ao usuário
-    await botBaileys.sendText(message.from, `Resposta da API:\n${apiDatetime}`);
-
-    await botBaileys.sendText(message.from, '*❌ANTI-SPAM❌*\n\nRecurso De Anti-SPAM Ativado! Não Envie Comandos Ao Mesmo Tempo! Aguarde Alguns Segundos Ao Interagir Com os Menus Do BOT <3');
   } catch (error) {
     console.error(error);
     await botBaileys.sendText(message.from, 'Ocorreu um erro ao obter dados da API.');
   }
 }
+
 
 if (message.body === '💳PACOTES MIX') {
   (async () => {
