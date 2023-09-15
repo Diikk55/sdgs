@@ -31,18 +31,77 @@ function gerarSenhaAleatoria(length) {
 
 botBaileys.on('message', async (message) => {
     const useratual = `${(message.from.split('@'))[0]}`;
-    const parametros = message.body.split(' ');
-    const logsender = 'Usuário: ' + useratual;
-    const logcomando = 'Comando: ' + parametros;
+    const parametros = message.body.split(' ') || [];
     const comandoprinc = parametros[0];
     const valorcomand = parametros[1];
     const comandokkj = message.body.toLowerCase().trim();
-    console.log(comandoprinc)
-    console.log(valorcomand)
+    const logsender = 'Usuário: ' + useratual;
+    const logcomando = 'Comando: ' + comandokkj;
+    //console.log(comandoprinc)
+    //console.log(valorcomand)
     console.log('Novo Comando!\n')
     console.log(logsender)
     console.log(logcomando)
 //====================FUNÇÕES BY ClassicX-O-BRABO========================//
+//========================INICIO ANTI-SPAM==============================//
+  const remetente = message.from;
+  var options = {
+    method: 'GET',
+    url: 'http://worldtimeapi.org/api/timezone/America/Sao_Paulo',
+    params: { '': '' },
+    data: {}
+  };
+
+  try {
+    const response = await axios.request(options);
+    const apiDatetime = response.data.datetime; // Pega o horário da resposta da API
+    const formattedDatetime = new Date(apiDatetime).toISOString(); // Formata o horário
+
+    // Abre o arquivo "spam.txt" e lê seu conteúdo
+    const filePath = path.join(__dirname, 'spam.txt');
+    let fileContent = '';
+    if (fs.existsSync(filePath)) {
+      fileContent = fs.readFileSync(filePath, 'utf-8');
+    }
+
+    // Verifica se já existe uma linha com o remetente atual
+    const lines = fileContent.split('\n');
+    let found = false;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.startsWith(remetente + '|')) {
+        const savedDatetime = line.split('|')[1];
+        const savedTimestamp = new Date(savedDatetime).getTime();
+        const currentTimestamp = new Date(apiDatetime).getTime();
+
+        if (currentTimestamp - savedTimestamp < 5000) {
+          // Menos de 5 segundos desde a última interação, responda com erro
+          await botBaileys.sendText(message.from, '*❌ANTI-SPAM❌*\n\nAguarde alguns segundos antes de enviar outro comando.');
+          return; // Sai da função para evitar processamento adicional
+        }
+
+        lines[i] = remetente + '|' + formattedDatetime;
+        found = true;
+        break;
+      }
+    }
+
+    // Se não encontrou uma linha existente, adiciona uma nova
+    if (!found) {
+      lines.push(remetente + '|' + formattedDatetime);
+    }
+
+    // Junta as linhas de volta em uma única string
+    const updatedContent = lines.join('\n');
+
+    // Salva as alterações de volta no arquivo
+    fs.writeFileSync(filePath, updatedContent);
+  } catch (error) {
+    console.error(error);
+    await botBaileys.sendText(message.from, 'Erro No Anti Spam! Consulte o Admin');
+  }
+//========================FIM DA FUNÇÃO ANTI-SPAM=========================//
+
 // Função para verificar se o usuário existe no banco de dados
 const verificarUsuario = async (logado) => {
     const browser = await puppeteer.launch();
@@ -77,79 +136,33 @@ const verificarUsuario = async (logado) => {
 
 // Função para enviar o menu
 const enviarMenu = async (message, usuarioInfo) => {
-    console.log(`Enviando Menu!\nUsuário: ${message.from}\n`);
+    //console.log(`Enviando Menu!\nUsuário: ${message.from}\n`);
     
     const saldoAtual = usuarioInfo ? usuarioInfo.saldo : "Não Cadastrado";
+    const codigo_d_convite = usuarioInfo ? usuarioInfo.codigo_de_convite : "Não Cadastrado"; 
     
-    const menuText = `Wanted Store\n\n◆ ━━━━❪✪❫━━━━ ◆\n❖ Seu número: ${(message.from.split('@'))[0]}\n❖ Saldo Atual: R$: ${saldoAtual}\n◆ ━━━━❪✪❫━━━━ ◆\n\nATENDIMENTO ON 24 HRS⏰\nGARANTIMOS LIVE E MELHOR PREÇO✅\nTODAS AS INFO SÃO TESTADAS✅\n\n🤖WANTED STORE A MELHOR STORE DA ATUALIDADE🤖\nQUALIDADE,PREÇO JUSTO E AGILIDADE`;
+    const menuText = `Wanted Store\n\n◆ ━━━━❪✪❫━━━━ ◆\n❖ Seu número: ${(message.from.split('@'))[0]}\n❖ Saldo Atual: R$: ${saldoAtual}\n❖ Codigo de Convite: ${codigo_d_convite}\n◆ ━━━━❪✪❫━━━━ ◆\n\n_ATENDIMENTO ON 24 HRS⏰_\n_GARANTIMOS LIVE E MELHOR PREÇO✅_\n_TODAS AS INFO SÃO TESTADAS✅_\n\n_🤖WANTED STORE A MELHOR STORE DA ATUALIDADE🤖_\n_QUALIDADE,PREÇO JUSTO E AGILIDADE_`;
 
     await botBaileys.sendPoll(message.from, menuText, {
-        options: ['🤑ADICIONAR SALDO🤑', '💳COMPRAR INFO💳', '🔧SUPORTE DESTE BOT🔧', '⚙️DESENVOLVEDOR DO BOT⚙️'],
+        options: ['🤑ADICIONAR SALDO🤑', '💳COMPRAR INFO💳', '🔧SUPORTE DESTE BOT🔧', '🚀AFILIADOS🚀', '⚙️DESENVOLVEDOR DO BOT⚙️'],
         multiselect: false
     });
 
     awaitingResponse = true;
 };
 //=====================SESSÃO DE POLL&FUNÇÕES PRINCIPAIS By ClassicX-O-BRABO======================//
-if (comandokkj === 'antispam') {
-  const remetente = message.from;
-  var options = {
-    method: 'GET',
-    url: 'http://worldtimeapi.org/api/timezone/America/Sao_Paulo',
-    params: { '': '' },
-    data: {}
-  };
-
-  try {
-    const response = await axios.request(options);
-    const apiDatetime = response.data.datetime; // Pega o horário da resposta da API
-    const formattedDatetime = new Date(apiDatetime).toISOString(); // Formata o horário
-
-    // Abre o arquivo "spam.txt" e lê seu conteúdo
-    const filePath = path.join(__dirname, 'spam.txt');
-    let fileContent = '';
-    if (fs.existsSync(filePath)) {
-      fileContent = fs.readFileSync(filePath, 'utf-8');
-    }
-
-    // Verifica se já existe uma linha com o remetente atual
-    const lines = fileContent.split('\n');
-    let found = false;
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      if (line.startsWith(remetente + '|')) {
-        const savedDatetime = line.split('|')[1];
-        const savedTimestamp = new Date(savedDatetime).getTime();
-        const currentTimestamp = new Date(apiDatetime).getTime();
-
-        if (currentTimestamp - savedTimestamp < 5000) {
-          // Menos de 5 segundos desde a última interação, responda com erro
-          await botBaileys.sendText(message.from, '❌ANTI-SPAM❌\n\nAguarde alguns segundos antes de enviar outro comando.');
-          return; // Sai da função para evitar processamento adicional
-        }
-
-        lines[i] = remetente + '|' + formattedDatetime;
-        found = true;
-        break;
-      }
-    }
-
-    // Se não encontrou uma linha existente, adiciona uma nova
-    if (!found) {
-      lines.push(remetente + '|' + formattedDatetime);
-    }
-
-    // Junta as linhas de volta em uma única string
-    const updatedContent = lines.join('\n');
-
-    // Salva as alterações de volta no arquivo
-    fs.writeFileSync(filePath, updatedContent);
-  } catch (error) {
-    console.error(error);
-    await botBaileys.sendText(message.from, 'Ocorreu um erro ao obter dados da API.');
-  }
+if (message.body === '🔧SUPORTE DESTE BOT🔧') {
+  await botBaileys.sendText(message.from, '*🤵SUPORTE WANTED STORE🤵*\n\nPARA TROCAS,SUPORTE E DÚVIDAS COM RELAÇÃO AO MATERIAL DESTE BOT E ETC.\n\nwa.me/5511917086876\n\nDIGITE *menu* A QUALQUER MOMENTO PARA VOLTAR AO MENU!');
+  return;
 }
-
+if (message.body === '🚀AFILIADOS🚀') {
+  await botBaileys.sendText(message.from, '*🤵SISTEMA DE AFILIADOS WANTED STORE🤵*\n\n_SEMPRE QUE UM USUÁRIO SE REGISTRAR NESTE BOT COM O SEU CODIGO DE CONVITE,VOCÊ IRÁ RECEBER 10% DE TODO VALOR QUE O ÚSUARIO CONVIDADO ADICIONAR NO BOT,SEM LIMITES DE QUANTO PODE GANHAR,QUANTO MAIS PESSOAS,MAIS VOCÊ GANHA!!_\n\n_PARA SEU AMIGO SE REGISTRAR COM O SEU CÓDIGO DE CONVITE,ELE DEVE DIGITAR O COMANDO *registrar* SEGUIDO DO SEU CÓDIGO DE CONVITE_\n\n*Exemplo*:\n*registrar 11145587*\n\nDIGITE *menu* A QUALQUER MOMENTO PARA VOLTAR AO MENU!');
+  return;
+}
+if (message.body === '⚙️DESENVOLVEDOR DO BOT⚙️') {
+  await botBaileys.sendText(message.from, '*⚙️DESENVOLVEDOR DESTE BOT⚙️*\n\n_CASO QUEIRA COMPRAR OU ALUGAR LOJAS COMO ESSA,ADQUIRIR A CRIAÇÃO DE ALGUM PROJETO OU REPORTAS BUGS,CHAME O DESENVOLVEDOR DESTE BOT_\n\n_*ATENÇÃO: SÓ CHAME O DESENVOLVEDOR SE TIVER ALGUMA DÚVIDA COM RELAÇÃO AO BOT EM SI,O DESENVOLVEDOR NÃO É RESPONSÁVEL PELO MATERIAL VENDIDO,PARA ISSO CHAME O SUPORTE DESTE BOT!*_\n\nClassicX-O-BRABO(Desenvolvedor):\nwa.me/5521976401218\n\nDIGITE *menu* A QUALQUER MOMENTO PARA VOLTAR AO MENU!');
+  return;
+}
 
 if (message.body === '💳PACOTES MIX') {
   (async () => {
@@ -159,7 +172,7 @@ if (message.body === '💳PACOTES MIX') {
     const email_do_usuario = usuarioInfo.numero;
     const senha_do_usuario = usuarioInfo.senha;
     if (usuarioEncontrado) {
-      console.log("Dados de Usuário Capturados!")
+      //console.log("Dados de Usuário Capturados!")
     } else {
       // Se o usuário não existe, envia mensagem de erro
       await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
@@ -195,7 +208,7 @@ if (message.body === '💳PACOTES MIX') {
     }, postData);
 
     if (response.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
-      console.log('Login bem-sucedido');
+      //console.log('Login bem-sucedido');
       // Redirecionar para https://wanted-store.42web.io/loja/listalogins.php
       //await botBaileys.sendText(message.from, response);
 
@@ -237,6 +250,120 @@ if (message.body === '💳PACOTES MIX') {
   })();
   awaitingResponse = true;
 }
+if (comandoprinc === 'bin') {
+  (async () => {
+    try {
+      const binescolhida = valorcomand ? valorcomand : '';
+
+      if (binescolhida === '') {
+        await botBaileys.sendText(message.from, 'Envie a Bin Para Pesquisar Junto Ao Comando!');
+        return;
+      }
+
+      const usuario = message.from;
+      const logado = usuario.split('@s.whatsapp.net')[0];
+      const { usuarioEncontrado, usuarioInfo } = await verificarUsuario(logado);
+      const email_do_usuario = usuarioInfo.numero;
+      const senha_do_usuario = usuarioInfo.senha;
+
+      if (!usuarioEncontrado) {
+        await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
+        return;
+      }
+
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+
+      // Configurar os dados do POST para o primeiro login
+      const postDataLogin = {
+        email: email_do_usuario,
+        senha: senha_do_usuario
+      };
+
+      // Fazer a solicitação POST para o primeiro login
+      await page.goto('https://wanted-store.42web.io/func/logarbotapi.php', {
+        waitUntil: 'networkidle0',
+      });
+
+      const responseLogin = await page.evaluate(async (postData) => {
+        const formData = new FormData();
+        formData.append('email', postData.email);
+        formData.append('senha', postData.senha);
+
+        const fetchOptions = {
+          method: 'POST',
+          body: formData,
+        };
+
+        const response = await fetch('https://wanted-store.42web.io/func/logarbotapi.php', fetchOptions);
+        const text = await response.text();
+
+        return text;
+      }, postDataLogin);
+      if (responseLogin.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
+        // Configurar os dados do POST para a pesquisa da bin
+        const postDataBin = {
+          bin: binescolhida
+        };
+
+        const responseBin = await page.evaluate(async (postData) => {
+          const formData = new FormData();
+          formData.append('bin', postData.bin);
+
+          const fetchOptions = {
+            method: 'POST',
+            body: formData,
+          };
+
+          const response = await fetch('https://wanted-store.42web.io/loja/listaloginsbin.php', fetchOptions);
+          const text = await response.text();
+          return text;
+        }, postDataBin);
+        
+        // Extrair elementos do tipo <option> da resposta da segunda página
+        
+        const options = responseBin.match(/<option[^>]*>.*?<\/option>/g);
+        if (options && options.length < 2) {
+          await botBaileys.sendText(message.from, '*⚠️Nenhum Cartão Da Bin Solicitada Disponível no Estoque!⚠️*\n\nTente Novamente Mais Tarde <3');
+          return;
+        }
+        if (options && options.length > 0) {
+          const pollOptions = options.map((option) => {
+            // Extrair o texto dentro da tag <option>
+            const text = option.replace(/<[^>]*>/g, '');
+            return text;
+          });
+
+          const maxOptionsPerPoll = 12;
+          const totalOptions = pollOptions.length;
+
+          for (let startIndex = 0; startIndex < totalOptions; startIndex += maxOptionsPerPoll) {
+            const endIndex = Math.min(startIndex + maxOptionsPerPoll, totalOptions);
+            const optionsSubset = pollOptions.slice(startIndex, endIndex);
+
+            if (optionsSubset.length > 0) {
+              // Enviar enquete para o usuário com as opções do subconjunto
+              await botBaileys.sendPoll(message.from, '*💳Escolha uma BIN Abaixo💳*', {
+                options: optionsSubset,
+                multiselect: false
+              });
+            }
+          }
+        } else {
+          await botBaileys.sendText(message.from, '*⚠️Nenhum Cartão Da Categoria Selecionada Disponível no Estoque!⚠️*\n\nTente Novamente Mais Tarde <3');
+        }
+      } else {
+        await botBaileys.sendText(message.from, 'Erro ao fazer login');
+        // Aqui você pode enviar uma mensagem de erro
+      }
+      await browser.close();
+    } catch (error) {
+      console.error(error);
+    }
+  })();
+  awaitingResponse = true;
+}
+
 if (comandoprinc.startsWith('R$')) {
   (async () => {
     try {
@@ -266,7 +393,7 @@ if (comandoprinc.startsWith('R$')) {
       const senha_do_usuario = usuarioInfo.senha;
 
       if (usuarioEncontrado) {
-        console.log("Dados de Usuário Capturados!");
+        //console.log("Dados de Usuário Capturados!");
       } else {
         // Se o usuário não existe, envia mensagem de erro
         await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
@@ -304,7 +431,7 @@ if (comandoprinc.startsWith('R$')) {
       }, postData);
 
       if (loginResponse.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
-        console.log('Login bem-sucedido');
+        //console.log('Login bem-sucedido');
       
         // Agora, faça a requisição POST para https://wanted-store.42web.io/func/comprarloginkk.php
         const compraData = {
@@ -333,6 +460,10 @@ if (comandoprinc.startsWith('R$')) {
       
         // Use cheerio para analisar a resposta HTML
         const $ = cheerio.load(compraResponse);
+        if (compraResponse.includes('Saldo insuficiente para realizar a compra.')) {
+          await botBaileys.sendText(message.from, '*❌SALDO INSUFICIENTE PARA PROSSEGUIR COM A COMPRA DESTE PACOTE!❌*');
+          return;
+        }
         if (compraResponse.includes('Nenhum Login Disponível')) {
           await botBaileys.sendText(message.from, '*❌ESTE PACOTE MIX ESTÁ INDISPONÍVEL EM ESTOQUE❌*\n\nTente Novamente Mais Tarde Ou Escolha Outro Produto <3');
           return;
@@ -363,7 +494,8 @@ const saldoRestante = partes[8] ? partes[8].trim() : '';
         await botBaileys.sendMedia(message.from, 'https://i.ibb.co/X2xgBW7/compra.jpg', '');
         await botBaileys.sendText(message.from, mensagemAoUsuario);
       } else {
-        console.log('Erro ao efetuar o login');
+        await botBaileys.sendText(message.from, 'Erro!');
+        //console.log('Erro ao efetuar o login');
         // Feche o navegador após o uso
         await browser.close();
       }
@@ -377,7 +509,7 @@ if (comandoprinc.startsWith('💳R$')) {
   (async () => {
     try {
       const nomeDaEnquete = message.voters.pollCreationMessage.name;
-      console.log(nomeDaEnquete)
+      //console.log(nomeDaEnquete)
       let itemselecionado = '';
 
       // Concatenar todos os elementos do array parametros com espaço
@@ -406,7 +538,7 @@ if (comandoprinc.startsWith('💳R$')) {
       const senha_do_usuario = usuarioInfo.senha;
 
       if (usuarioEncontrado) {
-        console.log("Dados de Usuário Capturados!");
+        //console.log("Dados de Usuário Capturados!");
       } else {
         // Se o usuário não existe, envia mensagem de erro
         await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
@@ -444,23 +576,23 @@ if (comandoprinc.startsWith('💳R$')) {
       }, postData);
 
       if (loginResponse.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
-        console.log('Login bem-sucedido');
+        //console.log('Login bem-sucedido');
 
         let compraUrl = ''; // Variável para armazenar a URL da compra
         
         // Definir a URL da compra com base no valor de nomeDaEnquete
         if (nomeDaEnquete === '*💳Escolha um Cartão Por Nível Abaixo💳*') {
           compraUrl = 'https://wanted-store.42web.io/func/comprarloginkk.php';
-          console.log(nomeDaEnquete)
-          console.log(compraUrl)
+          //console.log(nomeDaEnquete)
+          //console.log(compraUrl)
         } else if (nomeDaEnquete === '*💳Escolha um Cartão Por Banco Abaixo💳*') {
           compraUrl = 'https://wanted-store.42web.io/func/comprarloginbancokk.php';
-          console.log(nomeDaEnquete)
-          console.log(compraUrl)
+          //console.log(nomeDaEnquete)
+          //console.log(compraUrl)
         } else if (nomeDaEnquete === '*💳Escolha uma BIN Abaixo💳*') {
           compraUrl = 'https://wanted-store.42web.io/func/comprarloginbinkk.php';
-          console.log(nomeDaEnquete)
-          console.log(compraUrl)
+          //console.log(nomeDaEnquete)
+          //console.log(compraUrl)
         }
 
         // Verificar se a URL de compra foi definida
@@ -498,7 +630,7 @@ if (comandoprinc.startsWith('💳R$')) {
           }
 
           if (compraResponse.includes('Saldo insuficiente para realizar a compra.')) {
-            await botBaileys.sendText(message.from, '*⚠️Seu Saldo é Insuficiente Para Realizar a Comprar⚠️*');
+            await botBaileys.sendText(message.from, '*⚠️Seu Saldo é Insuficiente Para Realizar a Compra⚠️*');
             return
           }
           
@@ -539,12 +671,12 @@ if (comandoprinc.startsWith('💳R$')) {
           await botBaileys.sendMedia(message.from, 'https://i.ibb.co/X2xgBW7/compra.jpg' , '');
           await botBaileys.sendText(message.from, mensagemAoUsuario);
         } else {
-          console.log('URL de compra não definida');
+          //console.log('URL de compra não definida');
           // Feche o navegador após o uso
           await browser.close();
         }
       } else {
-        console.log('Erro ao efetuar o login');
+        //console.log('Erro ao efetuar o login');
         // Feche o navegador após o uso
         await browser.close();
       }
@@ -556,8 +688,13 @@ if (comandoprinc.startsWith('💳R$')) {
 
 if (comandoprinc === 'pix') {
   const valorkk = valorcomand;
+  if (valorkk > 150) {
+    await botBaileys.sendText(message.from, '*⚠️VALOR ALTO DEMAIS PARA GERAR O PAGAMENTO⚠️*\n\nO LIMITE MÁXIMO É 150');
+    return;
+  }
   if (valorkk === undefined) {
     await botBaileys.sendText(message.from, '*⚠️ INSIRA O VALOR DO PIX! ⚠️*\n\nExemplo: *pix 10*');
+    return;
   } else {
     (async () => {
       const usuario = message.from;
@@ -567,7 +704,7 @@ if (comandoprinc === 'pix') {
       const senha_do_usuario = usuarioInfo.senha;
 
       if (usuarioEncontrado) {
-        console.log("Dados de Usuário Capturados!");
+        //console.log("Dados de Usuário Capturados!");
 
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
@@ -600,7 +737,7 @@ if (comandoprinc === 'pix') {
         }, postData);
 
         if (response.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
-          console.log('Login bem-sucedido');
+          //console.log('Login bem-sucedido');
 
           // Configurar os dados do POST para gerar o Pix
           const postData2 = {
@@ -665,7 +802,7 @@ if (comandokkj === 'paguei o pix') {
     const email_do_usuario = usuarioInfo.numero;
     const senha_do_usuario = usuarioInfo.senha;
     if (usuarioEncontrado) {
-      console.log("Dados de Usuário Capturados!")
+      //console.log("Dados de Usuário Capturados!")
     } else {
       // Se o usuário não existe, envia mensagem de erro
       await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
@@ -701,7 +838,7 @@ if (comandokkj === 'paguei o pix') {
     }, postData);
 
     if (response.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
-      console.log('Login bem-sucedido');
+      //console.log('Login bem-sucedido');
       // Redirecionar para https://wanted-store.42web.io/loja/listalogins.php
       //await botBaileys.sendText(message.from, response);
 
@@ -709,8 +846,8 @@ if (comandokkj === 'paguei o pix') {
       const page2 = await browser.newPage();
       await page2.goto('https://wanted-store.42web.io/loja/central.php');
       const response2 = await page2.content();
-      await botBaileys.sendText(message.from, response2);
-      await botBaileys.sendText(message.from, '*Pix Recarregado!*');
+      //await botBaileys.sendText(message.from, response2);
+      await botBaileys.sendText(message.from, '*✅PAGAMENTOS ATUALIZADOS!✅*\n\nO STATUS DOS SEUS PAGAMENTOS PENDENTES FORAM ATUALIZADOS!,TODOS O PAGAMENTOS PENDENTES QUE CONSTAR COMO PAGO SERÁ CREDITADO AUTOMÁTICAMENTE\n\nSE VOCÊ PAGOU O PIX,E MESMO EXECUTANDO ESTE COMANDO NÃO CAIU O SALDO,AGUARDE ALGUNS SEGUNDOS E ATUALIZE NOVAMENTE OU CONTATE O SUPORTE!\n\nUTILIZE *menu* A QUALQUER MOMENTO PARA IR PARA O MENU');
 
     }
 
@@ -718,10 +855,97 @@ if (comandokkj === 'paguei o pix') {
   })();
   awaitingResponse = true;
 }
+if (comandokkj.startsWith('registrar')) {
+  const convidador = valorcomand ? valorcomand : "0000";
+  const usuario = message.from;
+  const logado = usuario.split('@s.whatsapp.net')[0];
 
+  async function realizarRegistro() {
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+
+      // Navega até a URL desejada
+      await page.goto('https://wanted-store.42web.io/dados/usuariosbot.json');
+
+      // Obtém o conteúdo da página como JSON
+      const content = await page.evaluate(() => {
+          return fetch('https://wanted-store.42web.io/dados/usuariosbot.json')
+              .then(response => response.json())
+              .then(data => data);
+      });
+
+      let usuarioEncontrado = false;
+
+      // Itera pelos blocos no JSON
+      for (const bloco in content) {
+          if (content.hasOwnProperty(bloco)) {
+              if (content[bloco].numero === logado) {
+                  const usuarioInfo = content[bloco];
+                  usuarioEncontrado = true;
+
+                  // Armazena as informações em variáveis
+                  const numero = usuarioInfo.numero;
+                  const senha = usuarioInfo.senha;
+                  const saldo = usuarioInfo.saldo;
+                  const codigoDeConvite = usuarioInfo.codigo_de_convite;
+                  const convidadoPor = usuarioInfo.convidado_por;
+
+                  // Envia as informações via WhatsApp
+                  await botBaileys.sendText(message.from, `*⚠️Usuário ${logado} Já Existe No Banco de Dados!⚠️*\n\nDigite *menu*`);
+                  await browser.close();
+                  break;
+              }
+          }
+      }
+
+      await browser.close();
+
+      // Verifica se o usuário foi encontrado antes de continuar
+      if (!usuarioEncontrado) {
+          // SEGUNDA ETAPA DO PUPPETEER ABAIXO
+          const useratual = `${(message.from.split('@'))[0]}`;
+          const senha = gerarSenhaAleatoria(8);
+
+          const browser2 = await puppeteer.launch();
+          const page2 = await browser2.newPage();
+
+          // Preencher o formulário
+          await page2.goto('https://wanted-store.42web.io/formbotusr.php', {
+              waitUntil: 'domcontentloaded',
+          });
+
+          await page2.type('#email', useratual);
+          await page2.type('#senha', senha);
+          await page2.type('#convidado', convidador);
+
+          // Enviar o formulário
+          await Promise.all([
+              page2.waitForNavigation(), // Aguardar o redirecionamento
+              page2.click('button[name="enviarCadastro"]'), // Clicar no botão de envio
+          ]);
+
+          // Capturar o código-fonte da página redirecionada
+          const response = await page2.content();
+          if (response === '<html><head></head><body>Usuário salvo com sucesso!</body></html>') {
+              const confcadastro = `*✅CADASTRADO COM SUCESSO!*\n\nUsuario: ${useratual}\nSenha De Login: ${senha}\n\nO Login Neste Bot é Automático,Seu Numero(No Formato 55) e Senha Servem para acessar sua conta atráves de nossa loja via Site,Guarde Sua Senha em um Local Seguro!\n\n Link Da Nossa STORE Via Site: https://wanted-store.42web.io/\n\nUtilize A qualquer Momento o Comando *Menu* Para Ir Ao Menu Deste Bot`;                                                                        
+              // Enviar a resposta ao usuário
+              await botBaileys.sendText(message.from, confcadastro);
+          }
+          
+
+          // Fechar o navegador
+          await browser2.close();
+      }
+  }
+
+  realizarRegistro().catch((error) => {
+      console.error('Erro:', error);
+      botBaileys.sendText(message.from, 'Erro ao realizar o registro.');
+  });
+}
 // Verifique se a mensagem é 'menu' e envie o menu se o usuário existir no banco de dados
 if (comandokkj === 'menu') {
-    console.log("Menu Acionado!")
+    //console.log("Menu Acionado!")
     const usuario = message.from;
     const logado = usuario.split('@s.whatsapp.net')[0];
 
@@ -732,7 +956,7 @@ if (comandokkj === 'menu') {
         await enviarMenu(message, usuarioInfo);
     } else {
         // Se o usuário não existe, envia mensagem de erro
-        await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
+        await botBaileys.sendText(message.from, '*❌VOCÊ NÃO ESTÁ CADASTRADO!❌*\n\n_PARA UTILIZAR AS FUNÇÕES DESTE BOT O CADASTRO É OBRIGATÓRIO_\n\nREGISTRE-SE ENVIANDO A PALAVRA *registrar*');
     }
 }
     if (message.body === '❌VOLTAR AO MENU❌') {
@@ -746,17 +970,17 @@ if (comandokkj === 'menu') {
             await enviarMenu(message, usuarioInfo);
         } else {
             // Se o usuário não existe, envia mensagem de erro
-            await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
+            await botBaileys.sendText(message.from, '*❌VOCÊ NÃO ESTÁ CADASTRADO!❌*\n\n_PARA UTILIZAR AS FUNÇÕES DESTE BOT O CADASTRO É OBRIGATÓRIO_\n\nREGISTRE-SE ENVIANDO A PALAVRA *registrar*');
         }
     }   
     if (message.body === '🤑ADICIONAR SALDO🤑') {
-        console.log(`Indo ao menu de Adicionar Saldo...\nUsuário: ${message.from}\n`);
-        const menuText = `💰COMO ADICIONAR SALDO VIA PIX💰\n\nUtilize "pix" Seguido do Valor Desejado no Formato 0.00\n\nExemplo:\n\n*pix 15*\n\n*pix 22.70* `;
+        //console.log(`Indo ao menu de Adicionar Saldo...\nUsuário: ${message.from}\n`);
+        const menuText = `*💰COMO ADICIONAR SALDO VIA PIX💰*\n\nUtilize "pix" Seguido do Valor Desejado no Formato 0.00\n\nExemplo:\n\n*pix 15*\n\n*pix 22.70* `;
         await botBaileys.sendText(message.from, menuText);    
         awaitingResponse = true;
     }
     if (message.body === '💳COMPRAR INFO💳') {
-        console.log(`Indo ao menu de Escolher Info...\nUsuário: ${message.from}\n`);
+        //console.log(`Indo ao menu de Escolher Info...\nUsuário: ${message.from}\n`);
         const menuText = `💳MENU DE DE CARTÕES💳\n\nTODAS AS INFOS ACOMPANHAM NOME E CPF!\n\nESCOLHA ABAIXO O TIPO DESEJADO`;
     
         await botBaileys.sendPoll(message.from, menuText, {
@@ -774,7 +998,7 @@ if (comandokkj === 'menu') {
             const email_do_usuario = usuarioInfo.numero;
             const senha_do_usuario = usuarioInfo.senha;
             if (usuarioEncontrado) {
-              console.log("Dados de Usuário Capturados!")
+              //console.log("Dados de Usuário Capturados!")
             } else {
               // Se o usuário não existe, envia mensagem de erro
               await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
@@ -810,7 +1034,7 @@ if (comandokkj === 'menu') {
             }, postData);
         
             if (response.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
-              console.log('Login bem-sucedido');
+              //console.log('Login bem-sucedido');
               // Redirecionar para https://wanted-store.42web.io/loja/listalogins.php
               //await botBaileys.sendText(message.from, response);
         
@@ -851,6 +1075,7 @@ if (comandokkj === 'menu') {
               await botBaileys.sendText(message.from, 'Erro ao fazer login');
               // Aqui você pode enviar uma mensagem de erro
             }
+            await botBaileys.sendText(message.from, '_Dica: Use "bin" Seguido da bin desejada Para Buscar Por Bins Específicas_\n\n_Exemplo:_\n_bin 550209_');
             await browser.close();
           })();
           awaitingResponse = true;
@@ -863,7 +1088,7 @@ if (comandokkj === 'menu') {
             const email_do_usuario = usuarioInfo.numero;
             const senha_do_usuario = usuarioInfo.senha;
             if (usuarioEncontrado) {
-              console.log("Dados de Usuário Capturados!")
+              //console.log("Dados de Usuário Capturados!")
             } else {
               // Se o usuário não existe, envia mensagem de erro
               await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
@@ -899,7 +1124,7 @@ if (comandokkj === 'menu') {
             }, postData);
         
             if (response.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
-              console.log('Login bem-sucedido');
+              //console.log('Login bem-sucedido');
               // Redirecionar para https://wanted-store.42web.io/loja/listalogins.php
               //await botBaileys.sendText(message.from, response);
         
@@ -952,7 +1177,7 @@ if (comandokkj === 'menu') {
         const email_do_usuario = usuarioInfo.numero;
         const senha_do_usuario = usuarioInfo.senha;
         if (usuarioEncontrado) {
-          console.log("Dados de Usuário Capturados!")
+          //console.log("Dados de Usuário Capturados!")
         } else {
           // Se o usuário não existe, envia mensagem de erro
           await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
@@ -988,7 +1213,7 @@ if (comandokkj === 'menu') {
         }, postData);
     
         if (response.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
-          console.log('Login bem-sucedido');
+          //console.log('Login bem-sucedido');
           // Redirecionar para https://wanted-store.42web.io/loja/listalogins.php
           //await botBaileys.sendText(message.from, response);
     
@@ -1108,7 +1333,7 @@ if (comandokkj === 'menu') {
                     })();
                 
                     break;
-                    case 'registrar':
+                    case 'registrardebugg':
                         if (command === 'registrar') {
                             const usuario = message.from;
                             const logado = usuario.split('@s.whatsapp.net')[0];
