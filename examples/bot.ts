@@ -5,6 +5,7 @@ import { text } from 'stream/consumers';
 import { BaileysClass } from '../lib/baileys.js';
 import { Console } from 'console';
 const puppeteer = require('puppeteer');
+const fs = require('fs');
 const cheerio = require('cheerio'); // Certifique-se de que o pacote cheerio está instalado
 var axios = require("axios").default;
 
@@ -100,9 +101,38 @@ if (comandokkj === 'antispam') {
 
   try {
     const response = await axios.request(options);
-    
+    const apiDatetime = response.data.datetime; // Pega o horário da resposta da API
+    const formattedDatetime = new Date(apiDatetime).toISOString(); // Formata o horário
+
+    // Abre o arquivo "spam.txt" e lê seu conteúdo
+    const filePath = './spam.txt';
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+
+    // Verifica se já existe uma linha com o remetente atual
+    const lines = fileContent.split('\n');
+    let found = false;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.startsWith(remetente + '|')) {
+        lines[i] = remetente + '|' + formattedDatetime;
+        found = true;
+        break;
+      }
+    }
+
+    // Se não encontrou uma linha existente, adiciona uma nova
+    if (!found) {
+      lines.push(remetente + '|' + formattedDatetime);
+    }
+
+    // Junta as linhas de volta em uma única string
+    const updatedContent = lines.join('\n');
+
+    // Salva as alterações de volta no arquivo
+    fs.writeFileSync(filePath, updatedContent);
+
     // Envie a resposta da API como mensagem ao usuário
-    await botBaileys.sendText(message.from, `Resposta da API:\n${JSON.stringify(response.data)}`);
+    await botBaileys.sendText(message.from, `Resposta da API:\n${apiDatetime}`);
 
     await botBaileys.sendText(message.from, '*❌ANTI-SPAM❌*\n\nRecurso De Anti-SPAM Ativado! Não Envie Comandos Ao Mesmo Tempo! Aguarde Alguns Segundos Ao Interagir Com os Menus Do BOT <3');
   } catch (error) {
