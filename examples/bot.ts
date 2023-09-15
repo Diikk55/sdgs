@@ -273,17 +273,34 @@ if (comandoprinc.startsWith('R$')) {
         // Extrair os valores usando seletores CSS
         const compraEfetuada = $('form').text().trim();
         const conteudo = compraEfetuada.split('Compra Efetuada com Sucesso!')[1].trim();
-      
-        const informacoes = conteudo.split('\n');
-        const tipo = informacoes[0];
-        const suporte = informacoes[1];
-        const preco = informacoes[2];
-        const dataCompra = informacoes[3];
-        const vendidoPara = informacoes[4];
-        const saldoRestante = informacoes[5];
-      
+
+// Use expressões regulares para separar o conteúdo
+const nomeRegex = /(.+?)TIPO:/;
+const nomeMatch = conteudo.match(nomeRegex);
+
+const nome = nomeMatch ? nomeMatch[1].trim() : '';
+const partes = conteudo.match(/(?:TIPO: (.*?))?(?:SUPORTE: (.*?))?(?:PREÇO: (.*?))?(?:DATA DA COMPRA: (.*?))?(?:VENDIDO PARA: (.*?))?(?:Usuario: (.*?))?(?:Saldo Restante: (.*?))?(?:VOLTAR AO MENU|$)/);
+
+// Partes separadas
+const tipo = partes[1] ? partes[1].trim() : '';
+const suporte = partes[2] ? partes[2].trim() : '';
+const preco = partes[3] ? partes[3].trim() : '';
+const dataDaCompra = partes[4] ? partes[4].trim() : '';
+const vendidoPara = partes[5] ? partes[5].trim() : '';
+const usuario = partes[6] ? partes[6].trim() : '';
+const saldoRestante = partes[7] ? partes[7].trim() : '';
+
+// Resultados
+console.log('Nome:', nome);
+console.log('Tipo:', tipo);
+console.log('Suporte:', suporte);
+console.log('Preço:', preco);
+console.log('Data da Compra:', dataDaCompra);
+console.log('Vendido Para:', vendidoPara);
+console.log('Usuário:', usuario);
+console.log('Saldo Restante:', saldoRestante);      
         // Enviar uma mensagem ao usuário com os valores extraídos
-        const mensagemAoUsuario = `Compra Efetuada com Sucesso!\n\nConteúdo:\n${conteudo}\n\n${tipo}\n${suporte}\n${preco}\n${dataCompra}\n\n${vendidoPara}\nSaldo Restante: ${saldoRestante}`;
+        const mensagemAoUsuario = `${conteudo}`;
       
         await botBaileys.sendMedia(message.from, 'https://i.ibb.co/X2xgBW7/compra.jpg', '');
         await botBaileys.sendText(message.from, mensagemAoUsuario);
