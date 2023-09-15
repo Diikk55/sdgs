@@ -6,6 +6,7 @@ import { BaileysClass } from '../lib/baileys.js';
 import { Console } from 'console';
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio'); // Certifique-se de que o pacote cheerio está instalado
+var axios = require("axios").default;
 
 const botBaileys = new BaileysClass({});
 
@@ -39,6 +40,7 @@ botBaileys.on('message', async (message) => {
     console.log('Novo Comando!\n')
     console.log(logsender)
     console.log(logcomando)
+//====================FUNÇÕES BY ClassicX-O-BRABO========================//
 // Função para verificar se o usuário existe no banco de dados
 const verificarUsuario = async (logado) => {
     const browser = await puppeteer.launch();
@@ -86,6 +88,28 @@ const enviarMenu = async (message, usuarioInfo) => {
 
     awaitingResponse = true;
 };
+//=====================SESSÃO DE POLL&FUNÇÕES PRINCIPAIS By ClassicX-O-BRABO======================//
+if (comandokkj === 'antispam') {
+  const remetente = message.from;
+  var options = {
+    method: 'GET',
+    url: 'http://worldtimeapi.org/api/timezone/America/Sao_Paulo',
+    params: { '': '' },
+    data: {}
+  };
+
+  try {
+    const response = await axios.request(options);
+    
+    // Envie a resposta da API como mensagem ao usuário
+    await botBaileys.sendText(message.from, `Resposta da API:\n${JSON.stringify(response.data)}`);
+
+    await botBaileys.sendText(message.from, '*❌ANTI-SPAM❌*\n\nRecurso De Anti-SPAM Ativado! Não Envie Comandos Ao Mesmo Tempo! Aguarde Alguns Segundos Ao Interagir Com os Menus Do BOT <3');
+  } catch (error) {
+    console.error(error);
+    await botBaileys.sendText(message.from, 'Ocorreu um erro ao obter dados da API.');
+  }
+}
 
 if (message.body === '💳PACOTES MIX') {
   (async () => {
@@ -269,8 +293,13 @@ if (comandoprinc.startsWith('R$')) {
       
         // Use cheerio para analisar a resposta HTML
         const $ = cheerio.load(compraResponse);
+        if (compraResponse.includes('Nenhum Login Disponível')) {
+          await botBaileys.sendText(message.from, '*❌ESTE PACOTE MIX ESTÁ INDISPONÍVEL EM ESTOQUE❌*\n\nTente Novamente Mais Tarde Ou Escolha Outro Produto <3');
+          return;
+        }
       
         // Extrair os valores usando seletores CSS
+        //console.log(compraResponse)
         const compraEfetuada = $('form').text().trim();
         const conteudo = compraEfetuada.split('Compra Efetuada com Sucesso!')[1].trim();
 
@@ -588,6 +617,68 @@ if (comandoprinc === 'pix') {
     })();
   }
 }
+if (comandokkj === 'paguei o pix') {
+  (async () => {
+    const usuario = message.from;
+    const logado = usuario.split('@s.whatsapp.net')[0];
+    const { usuarioEncontrado, usuarioInfo } = await verificarUsuario(logado);
+    const email_do_usuario = usuarioInfo.numero;
+    const senha_do_usuario = usuarioInfo.senha;
+    if (usuarioEncontrado) {
+      console.log("Dados de Usuário Capturados!")
+    } else {
+      // Se o usuário não existe, envia mensagem de erro
+      await botBaileys.sendText(message.from, '❌Você não está cadastrado. Por favor, registre-se\n\nApenas Digite *registrar*');
+    }
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+  
+    // Configurar os dados do POST
+    const postData = {
+      email: email_do_usuario,
+      senha: senha_do_usuario
+    };
+  
+    // Fazer a solicitação POST
+    await page.goto('https://wanted-store.42web.io/func/logarbotapi.php', {
+      waitUntil: 'networkidle0',
+    });
+  
+    const response = await page.evaluate(async (postData) => {
+      const formData = new FormData();
+      formData.append('email', postData.email);
+      formData.append('senha', postData.senha);
+  
+      const fetchOptions = {
+        method: 'POST',
+        body: formData,
+      };
+  
+      const response = await fetch('https://wanted-store.42web.io/func/logarbotapi.php', fetchOptions);
+      const text = await response.text();
+  
+      return text;
+    }, postData);
+
+    if (response.includes('Login Efetuado Com Sucesso! Cookies Salvos!')) {
+      console.log('Login bem-sucedido');
+      // Redirecionar para https://wanted-store.42web.io/loja/listalogins.php
+      //await botBaileys.sendText(message.from, response);
+
+      // Crie um novo PageContext na mesma instância do navegador
+      const page2 = await browser.newPage();
+      await page2.goto('https://wanted-store.42web.io/loja/central.php');
+      const response2 = await page2.content();
+      await botBaileys.sendText(message.from, response2);
+      await botBaileys.sendText(message.from, '*Pix Recarregado!*');
+
+    }
+
+    await browser.close();
+  })();
+  awaitingResponse = true;
+}
+
 // Verifique se a mensagem é 'menu' e envie o menu se o usuário existir no banco de dados
 if (comandokkj === 'menu') {
     console.log("Menu Acionado!")
@@ -698,22 +789,25 @@ if (comandokkj === 'menu') {
                   return text;
                 });
               
-                // Filtrar a opção "💳ESCOLHA UM CARTÃO AQUI💳" antes de enviar a enquete
-                //const filteredOptions = pollOptions.filter((option) => option !== '💳ESCOLHA UM CARTÃO AQUI💳');
+                const maxOptionsPerPoll = 12;
+                const totalOptions = pollOptions.length;
               
-                if (pollOptions.length > 2) {
-                  // Enviar enquete para o usuário com as opções filtradas
-                  await botBaileys.sendPoll(message.from, '*💳Escolha uma BIN Abaixo💳*', {
-                    options: pollOptions,
-                    multiselect: false
-                  });
-                } else {
-                  await botBaileys.sendText(message.from, '*⚠️Nenhum Cartão Da Categoria Selecionada Disponível no Estoque!⚠️*\n\nTente Novamente Mais Tarde <3');
+                for (let startIndex = 0; startIndex < totalOptions; startIndex += maxOptionsPerPoll) {
+                  const endIndex = Math.min(startIndex + maxOptionsPerPoll, totalOptions);
+                  const optionsSubset = pollOptions.slice(startIndex, endIndex);
+              
+                  if (optionsSubset.length > 0) {
+                    // Enviar enquete para o usuário com as opções do subconjunto
+                    await botBaileys.sendPoll(message.from, '*💳Escolha uma BIN Abaixo💳*', {
+                      options: optionsSubset,
+                      multiselect: false
+                    });
+                  }
                 }
               } else {
                 await botBaileys.sendText(message.from, '*⚠️Nenhum Cartão Da Categoria Selecionada Disponível no Estoque!⚠️*\n\nTente Novamente Mais Tarde <3');
-              }
-            } else {
+              }    
+                  } else {
               await botBaileys.sendText(message.from, 'Erro ao fazer login');
               // Aqui você pode enviar uma mensagem de erro
             }
@@ -784,22 +878,25 @@ if (comandokkj === 'menu') {
                   return text;
                 });
               
-                // Filtrar a opção "💳ESCOLHA UM CARTÃO AQUI💳" antes de enviar a enquete
-                //const filteredOptions = pollOptions.filter((option) => option !== '💳ESCOLHA UM CARTÃO AQUI💳');
+                const maxOptionsPerPoll = 12;
+                const totalOptions = pollOptions.length;
               
-                if (pollOptions.length > 2) {
-                  // Enviar enquete para o usuário com as opções filtradas
-                  await botBaileys.sendPoll(message.from, '*💳Escolha um Cartão Por Banco Abaixo💳*', {
-                    options: pollOptions,
-                    multiselect: false
-                  });
-                } else {
-                  await botBaileys.sendText(message.from, '*⚠️Nenhum Cartão Da Categoria Selecionada Disponível no Estoque!⚠️*\n\nTente Novamente Mais Tarde <3');
+                for (let startIndex = 0; startIndex < totalOptions; startIndex += maxOptionsPerPoll) {
+                  const endIndex = Math.min(startIndex + maxOptionsPerPoll, totalOptions);
+                  const optionsSubset = pollOptions.slice(startIndex, endIndex);
+              
+                  if (optionsSubset.length > 0) {
+                    // Enviar enquete para o usuário com as opções do subconjunto
+                    await botBaileys.sendPoll(message.from, '*💳Escolha um Cartão Por Banco Abaixo💳*', {
+                      options: optionsSubset,
+                      multiselect: false
+                    });
+                  }
                 }
               } else {
                 await botBaileys.sendText(message.from, '*⚠️Nenhum Cartão Da Categoria Selecionada Disponível no Estoque!⚠️*\n\nTente Novamente Mais Tarde <3');
-              }
-            } else {
+              }    
+                } else {
               await botBaileys.sendText(message.from, 'Erro ao fazer login');
               // Aqui você pode enviar uma mensagem de erro
             }
@@ -870,22 +967,24 @@ if (comandokkj === 'menu') {
               return text;
             });
           
-            // Filtrar a opção "💳ESCOLHA UM CARTÃO AQUI💳" antes de enviar a enquete
-            //const filteredOptions = pollOptions.filter((option) => option !== '💳ESCOLHA UM CARTÃO AQUI💳');
+            const maxOptionsPerPoll = 12;
+            const totalOptions = pollOptions.length;
           
-            if (pollOptions.length > 2) {
-              //console.log(filteredOptions)
-              // Enviar enquete para o usuário com as opções filtradas
-              await botBaileys.sendPoll(message.from, '*💳Escolha um Cartão Por Nível Abaixo💳*', {
-                options: pollOptions,
-                multiselect: false
-              });
-            } else {
-              await botBaileys.sendText(message.from, '*⚠️Nenhum Cartão Da Categoria Selecionada Disponível no Estoque!⚠️*\n\nTente Novamente Mais Tarde <3');
+            for (let startIndex = 0; startIndex < totalOptions; startIndex += maxOptionsPerPoll) {
+              const endIndex = Math.min(startIndex + maxOptionsPerPoll, totalOptions);
+              const optionsSubset = pollOptions.slice(startIndex, endIndex);
+          
+              if (optionsSubset.length > 0) {
+                // Enviar enquete para o usuário com as opções do subconjunto
+                await botBaileys.sendPoll(message.from, '*💳Escolha um Cartão Por Nível Abaixo💳*', {
+                  options: optionsSubset,
+                  multiselect: false
+                });
+              }
             }
           } else {
             await botBaileys.sendText(message.from, '*⚠️Nenhum Cartão Da Categoria Selecionada Disponível no Estoque!⚠️*\n\nTente Novamente Mais Tarde <3');
-          }
+          }          
         } else {
           await botBaileys.sendText(message.from, 'Erro ao fazer login');
           // Aqui você pode enviar uma mensagem de erro
@@ -894,6 +993,7 @@ if (comandokkj === 'menu') {
       })();
       awaitingResponse = true;
     } else {
+//=====================SESSÃO DE COMANDOS ALTERNATIVOS By ClassicX-O-BRABO==========================//
         const command = message.body.toLowerCase().trim();
         //console.log(command)
         switch (command) {
