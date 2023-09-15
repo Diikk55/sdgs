@@ -275,20 +275,17 @@ if (comandoprinc.startsWith('R$')) {
         const conteudo = compraEfetuada.split('Compra Efetuada com Sucesso!')[1].trim();
 
 // Use expressões regulares para separar o conteúdo
-const nomeRegex = /(.+?)TIPO:/;
-const nomeMatch = conteudo.match(nomeRegex);
-
-const nome = nomeMatch ? nomeMatch[1].trim() : '';
-const partes = conteudo.match(/(?:TIPO: (.*?))?(?:SUPORTE: (.*?))?(?:PREÇO: (.*?))?(?:DATA DA COMPRA: (.*?))?(?:VENDIDO PARA: (.*?))?(?:Usuario: (.*?))?(?:Saldo Restante: (.*?))?(?:VOLTAR AO MENU|$)/);
+const partes = conteudo.match(/(.*?)(?:TIPO: (.*?))?(?:SUPORTE: (.*?))?(?:PREÇO: (.*?))?(?:DATA DA COMPRA: (.*?))?(?:VENDIDO PARA: (.*?))?(?:Usuario: (.*?))?(?:Saldo Restante: (.*?))?(?:VOLTAR AO MENU|$)/);
 
 // Partes separadas
-const tipo = partes[1] ? partes[1].trim() : '';
-const suporte = partes[2] ? partes[2].trim() : '';
-const preco = partes[3] ? partes[3].trim() : '';
-const dataDaCompra = partes[4] ? partes[4].trim() : '';
-const vendidoPara = partes[5] ? partes[5].trim() : '';
-const usuario = partes[6] ? partes[6].trim() : '';
-const saldoRestante = partes[7] ? partes[7].trim() : '';
+const nome = partes[1].trim();
+const tipo = partes[2] ? partes[2].trim() : '';
+const suporte = partes[3] ? partes[3].trim() : '';
+const preco = partes[4] ? partes[4].trim() : '';
+const dataDaCompra = partes[5] ? partes[5].trim() : '';
+const vendidoPara = partes[6] ? partes[6].trim() : '';
+const usuario = partes[7] ? partes[7].trim() : '';
+const saldoRestante = partes[8] ? partes[8].trim() : '';
 
 // Resultados
 console.log('Nome:', nome);
@@ -298,7 +295,7 @@ console.log('Preço:', preco);
 console.log('Data da Compra:', dataDaCompra);
 console.log('Vendido Para:', vendidoPara);
 console.log('Usuário:', usuario);
-console.log('Saldo Restante:', saldoRestante);      
+console.log('Saldo Restante:', saldoRestante);
         // Enviar uma mensagem ao usuário com os valores extraídos
         const mensagemAoUsuario = `${conteudo}`;
       
