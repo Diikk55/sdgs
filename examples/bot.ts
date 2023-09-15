@@ -275,7 +275,7 @@ if (comandoprinc.startsWith('R$')) {
         const conteudo = compraEfetuada.split('Compra Efetuada com Sucesso!')[1].trim();
 
 // Use expressões regulares para separar o conteúdo
-const partes = conteudo.match(/(.*?)(?:TIPO: (.*?))?(?:SUPORTE: (.*?))?(?:PREÇO: (.*?))?(?:DATA DA COMPRA: (.*?))?(?:VENDIDO PARA: (.*?))?(?:Usuario: (.*?))?(?:Saldo Restante: (.*?))?(?:VOLTAR AO MENU|$)/);
+const partes = conteudo.match(/([\s\S]*?)(?:TIPO: (.*?))?(?:SUPORTE: (.*?))?(?:PREÇO: (.*?))?(?:DATA DA COMPRA: (.*?))?(?:VENDIDO PARA: (.*?))?(?:Usuario: (.*?))?(?:Saldo Restante: (.*?))?(?:VOLTAR AO MENU|$)/);
 
 // Partes separadas
 const nome = partes[1].trim();
@@ -287,17 +287,9 @@ const vendidoPara = partes[6] ? partes[6].trim() : '';
 const usuario = partes[7] ? partes[7].trim() : '';
 const saldoRestante = partes[8] ? partes[8].trim() : '';
 
-// Resultados
-console.log('Nome:', nome);
-console.log('Tipo:', tipo);
-console.log('Suporte:', suporte);
-console.log('Preço:', preco);
-console.log('Data da Compra:', dataDaCompra);
-console.log('Vendido Para:', vendidoPara);
-console.log('Usuário:', usuario);
-console.log('Saldo Restante:', saldoRestante);
+
         // Enviar uma mensagem ao usuário com os valores extraídos
-        const mensagemAoUsuario = `${conteudo}`;
+        const mensagemAoUsuario = `*Conteúdo*:\n${nome}\n*Tipo*: ${tipo}\n*Suporte*: ${suporte}\n*Preço*: ${preco}\n*Data da Compra*: ${dataDaCompra}\n\n*Usuário*: ${usuario}\n*Saldo Restante*: ${saldoRestante}`;
       
         await botBaileys.sendMedia(message.from, 'https://i.ibb.co/X2xgBW7/compra.jpg', '');
         await botBaileys.sendText(message.from, mensagemAoUsuario);
